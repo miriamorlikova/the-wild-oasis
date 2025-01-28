@@ -33,7 +33,7 @@ const Page = async ({ params }: CabinDynamicRouteProps) => {
 				</div>
 
 				<div>
-					<h3 className="text-accent-100 font-black text-7xl mb-5  py-6 pb-1 w-[150%]">
+					<h3 className="text-accent-100 font-black text-7xl mb-5 py-6 pb-1 w-[150%]">
 						Cabin {cabin_name}
 					</h3>
 
@@ -57,10 +57,25 @@ const Page = async ({ params }: CabinDynamicRouteProps) => {
 						<li className="flex gap-3 items-center">
 							<HiMiniEyeSlash className="h-5 w-5 text-primary-600 mb-1.5" />
 							<span className="text-lg">
-								Privacy <span className="font-bold">100%</span> guaranteed
+								Privacy <span className="font-bold ">100%</span> guaranteed
 							</span>
 						</li>
 					</ul>
+					<p className="flex gap-3 justify-end items-baseline mb-4">
+						{discount > 0 ? (
+							<>
+								<span className="text-3xl font-[350]">
+									${regular_price - discount}
+								</span>
+								<span className="line-through font-semibold text-primary-600">
+									${regular_price}
+								</span>
+							</>
+						) : (
+							<span className="text-3xl font-[350]">${regular_price}</span>
+						)}
+						<span className="text-primary-200">/ night</span>
+					</p>
 				</div>
 			</div>
 
