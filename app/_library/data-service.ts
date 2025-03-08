@@ -1,48 +1,33 @@
 import { eachDayOfInterval } from "date-fns";
-import { supabase } from "../_utils/supabaseClient";
-import { Bookings, Cabin, Country, Guests, Settings } from "../_utils/types";
+import { supabase } from "./supabaseClient";
+import {
+	BookingType,
+	CabinType,
+	CountryType,
+	GetBookingType,
+	GuestType,
+	SettingsType,
+	SupabaseResponseType,
+} from "./types";
+import { notFound } from "next/navigation";
 
-// Define generic types for Supabase responses
-type SupabaseResponse<T> = {
-	data: T | null;
-	error: Error | null;
-};
-
-/////////////
-// GET
-export const getCabin = async (id: number): Promise<Cabin> => {
-	const { data, error }: SupabaseResponse<Cabin> = await supabase
+export const getCabin = async (id: number): Promise<CabinType> => {
+	const { data, error }: SupabaseResponseType<CabinType> = await supabase
 		.from("cabins")
 		.select("*")
 		.eq("id", id)
 		.single();
 
 	if (error || !data) {
-		throw new Error(
-			`${error} Failed to fetch cabin price for cabin with ID ${id}`
-		);
+		console.error(error);
+		notFound();
 	}
-	console.log(data.cabin_name);
+
 	return data;
 };
 
-// export const getCabinPrice = async (id: number): Promise<Cabin | null> => {
-// 	const { data, error }: SupabaseResponse<Cabin> = await supabase
-// 		.from("cabins")
-// 		.select("regular_price, discount")
-// 		.eq("id", id)
-// 		.single();
-
-// 	if (error) {
-// 		console.error(error);
-// 		return null;
-// 	}
-
-// 	return data;
-// };
-
-export const getCabinPrice = async (id: number): Promise<Cabin> => {
-	const { data, error }: SupabaseResponse<Cabin> = await supabase
+export const getCabinPrice = async (id: number): Promise<CabinType> => {
+	const { data, error }: SupabaseResponseType<CabinType> = await supabase
 		.from("cabins")
 		.select("regular_price, discount")
 		.eq("id", id)
@@ -57,10 +42,11 @@ export const getCabinPrice = async (id: number): Promise<Cabin> => {
 	return data;
 };
 
-export const getCabins = async (): Promise<Cabin[]> => {
-	const { data, error }: SupabaseResponse<Cabin[]> = await supabase
+export const getCabins = async (): Promise<CabinType[]> => {
+	const { data, error }: SupabaseResponseType<CabinType[]> = await supabase
 		.from("cabins")
-		.select("id, cabin_name, max_capacity, regular_price, discount, image");
+		.select("id, cabin_name, max_capacity, regular_price, discount, image")
+		.order("cabin_name", { ascending: true });
 
 	if (error) {
 		console.error(error);
@@ -69,18 +55,20 @@ export const getCabins = async (): Promise<Cabin[]> => {
 	return data || [];
 };
 
-export const getGuest = async (email: string): Promise<Guests | null> => {
-	const { data }: SupabaseResponse<Guests> = await supabase
+export async function getGuest(email: string) {
+	const { data } = await supabase
 		.from("guests")
 		.select("*")
 		.eq("email", email)
 		.single();
 
-	return data || null;
-};
+	return data;
+}
 
-export const getBooking = async (id: number): Promise<Bookings | null> => {
-	const { data, error }: SupabaseResponse<Bookings> = await supabase
+export const getBooking = async (
+	id: number
+): Promise<GetBookingType | null> => {
+	const { data, error }: SupabaseResponseType<GetBookingType> = await supabase
 		.from("bookings")
 		.select("*")
 		.eq("id", id)
@@ -94,11 +82,11 @@ export const getBooking = async (id: number): Promise<Bookings | null> => {
 	return data;
 };
 
-export const getBookings = async (guestId: number): Promise<Bookings[]> => {
-	const { data, error }: SupabaseResponse<Bookings[]> = await supabase
+export const getBookings = async (guestId: number) => {
+	const { data, error } = await supabase
 		.from("bookings")
 		.select(
-			"id, created_at, start_date, end_date, num_of_nights, num_of_guests, total_price, guest_id, cabin_id, cabins(name, image)"
+			"id, created_at, start_date, end_date, num_of_nights, num_of_guests, total_price, guest_id, cabin_id, cabins(cabin_name, image)"
 		)
 		.eq("guest_id", guestId)
 		.order("start_date");
@@ -108,7 +96,7 @@ export const getBookings = async (guestId: number): Promise<Bookings[]> => {
 		throw new Error("Bookings could not get loaded");
 	}
 
-	return data || [];
+	return data ?? [];
 };
 
 export const getBookedDatesByCabinId = async (
@@ -118,7 +106,7 @@ export const getBookedDatesByCabinId = async (
 	today.setUTCHours(0, 0, 0, 0);
 	const todayISO = today.toISOString();
 
-	const { data, error }: SupabaseResponse<Bookings[]> = await supabase
+	const { data, error }: SupabaseResponseType<BookingType[]> = await supabase
 		.from("bookings")
 		.select("*")
 		.eq("cabin_id", cabinId)
@@ -129,7 +117,7 @@ export const getBookedDatesByCabinId = async (
 		throw new Error("Bookings could not get loaded");
 	}
 
-	const bookedDates = (data || []).flatMap((booking) => {
+	const bookedDates = (data || []).flatMap((booking: BookingType) => {
 		if (booking.start_date && booking.end_date) {
 			return eachDayOfInterval({
 				start: new Date(booking.start_date),
@@ -142,8 +130,8 @@ export const getBookedDatesByCabinId = async (
 	return bookedDates;
 };
 
-export const getSettings = async (): Promise<Settings> => {
-	const { data, error }: SupabaseResponse<Settings> = await supabase
+export const getSettings = async (): Promise<SettingsType> => {
+	const { data, error }: SupabaseResponseType<SettingsType> = await supabase
 		.from("settings")
 		.select("*")
 		.single();
@@ -156,24 +144,22 @@ export const getSettings = async (): Promise<Settings> => {
 	return data || {};
 };
 
-export const getCountries = async (): Promise<Country[]> => {
+export const getCountries = async (): Promise<CountryType[]> => {
 	try {
 		const res = await fetch(
 			"https://restcountries.com/v2/all?fields=name,flag"
 		);
-		const countries: Country[] = await res.json();
+		const countries: CountryType[] = await res.json();
 		return countries;
 	} catch {
 		throw new Error("Could not fetch countries");
 	}
 };
 
-/////////////
-// CREATE
 export const createGuest = async (
-	newGuest: Omit<Guests, "id">
-): Promise<Guests | null> => {
-	const { data, error }: SupabaseResponse<Guests> = await supabase
+	newGuest: Omit<GuestType, "id">
+): Promise<GuestType | null> => {
+	const { data, error }: SupabaseResponseType<GuestType> = await supabase
 		.from("guests")
 		.insert([newGuest]);
 
@@ -182,75 +168,5 @@ export const createGuest = async (
 		throw new Error("Guest could not be created");
 	}
 
-	return data;
-};
-
-export const createBooking = async (
-	newBooking: Omit<Bookings, "id">
-): Promise<Bookings | null> => {
-	const { data, error }: SupabaseResponse<Bookings> = await supabase
-		.from("bookings")
-		.insert([newBooking])
-		.select()
-		.single();
-
-	if (error) {
-		console.error(error);
-		throw new Error("Booking could not be created");
-	}
-
-	return data;
-};
-
-/////////////
-// UPDATE
-export const updateGuest = async (
-	id: number,
-	updatedFields: Partial<Guests>
-): Promise<Guests | null> => {
-	const { data, error }: SupabaseResponse<Guests> = await supabase
-		.from("guests")
-		.update(updatedFields)
-		.eq("id", id)
-		.select()
-		.single();
-
-	if (error) {
-		console.error(error);
-		throw new Error("Guest could not be updated");
-	}
-	return data;
-};
-
-export const updateBooking = async (
-	id: number,
-	updatedFields: Partial<Bookings>
-): Promise<Bookings | null> => {
-	const { data, error }: SupabaseResponse<Bookings> = await supabase
-		.from("bookings")
-		.update(updatedFields)
-		.eq("id", id)
-		.select()
-		.single();
-
-	if (error) {
-		console.error(error);
-		throw new Error("Booking could not be updated");
-	}
-	return data;
-};
-
-/////////////
-// DELETE
-export const deleteBooking = async (id: number): Promise<Bookings | null> => {
-	const { data, error }: SupabaseResponse<Bookings> = await supabase
-		.from("bookings")
-		.delete()
-		.eq("id", id);
-
-	if (error) {
-		console.error(error);
-		throw new Error("Booking could not be deleted");
-	}
 	return data;
 };

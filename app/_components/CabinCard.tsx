@@ -1,10 +1,10 @@
 import Image from "next/image";
 import { HiOutlineUsers } from "react-icons/hi2";
-import { type Cabin } from "../_utils/types";
+import { type CabinType } from "../_library/types";
 import Link from "next/link";
 
 type CabinCardProps = {
-	cabin: Cabin;
+	cabin: CabinType;
 };
 
 const CabinCard = ({ cabin }: CabinCardProps) => {

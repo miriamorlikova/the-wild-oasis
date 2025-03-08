@@ -1,10 +1,14 @@
-import ReservationCard from "@/app/_components/ReservationCard";
-import { type Bookings } from "@/app/_utils/types";
+import ReservationList from "@/app/_components/ReservationList";
+import { auth } from "@/app/_library/auth";
+import { getBookings } from "@/app/_library/data-service";
+import { BookingType, CustomUserType } from "@/app/_library/types";
 import Link from "next/link";
 
-const Page = () => {
-	// CHANGE
-	const bookings: Bookings[] = [];
+const Page = async () => {
+	const session = await auth();
+	const user = session?.user as CustomUserType;
+	if (!user.guest_id) throw new Error("User guest_id is missing");
+	const bookings: BookingType[] = await getBookings(user.guest_id);
 
 	return (
 		<div>
@@ -20,11 +24,7 @@ const Page = () => {
 					</Link>
 				</p>
 			) : (
-				<ul className="space-y-6">
-					{bookings.map((booking) => (
-						<ReservationCard booking={booking} key={booking.id} />
-					))}
-				</ul>
+				<ReservationList bookings={bookings} />
 			)}
 		</div>
 	);
